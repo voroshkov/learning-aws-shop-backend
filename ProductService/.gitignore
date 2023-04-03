@@ -1,0 +1,3 @@
+# package directories
+.serverless
+dist
