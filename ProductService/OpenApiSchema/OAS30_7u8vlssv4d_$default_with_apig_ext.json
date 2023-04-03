@@ -1,0 +1,74 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "dev-ProductService",
+    "version" : "2023-04-02 08:15:13UTC"
+  },
+  "servers" : [ {
+    "url" : "https://7u8vlssv4d.execute-api.us-east-1.amazonaws.com/{basePath}",
+    "variables" : {
+      "basePath" : {
+        "default" : ""
+      }
+    }
+  } ],
+  "tags" : [ {
+    "name" : "aws:cloudformation:stack-name",
+    "x-amazon-apigateway-tag-value" : "ProductService-dev"
+  }, {
+    "name" : "aws:cloudformation:logical-id",
+    "x-amazon-apigateway-tag-value" : "HttpApi"
+  }, {
+    "name" : "aws:cloudformation:stack-id",
+    "x-amazon-apigateway-tag-value" : "arn:aws:cloudformation:us-east-1:485160961034:stack/ProductService-dev/45f81360-d12e-11ed-b7a3-0af5921692d7"
+  }, {
+    "name" : "STAGE",
+    "x-amazon-apigateway-tag-value" : "dev"
+  } ],
+  "paths" : {
+    "/product/{id}" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /product/{id}"
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:485160961034:function:ProductService-dev-getProductById/invocations",
+          "connectionType" : "INTERNET",
+          "timeoutInMillis" : 30000
+        }
+      },
+      "parameters" : [ {
+        "name" : "id",
+        "in" : "path",
+        "description" : "Generated path parameter for id",
+        "required" : true,
+        "schema" : {
+          "type" : "string"
+        }
+      } ]
+    },
+    "/products" : {
+      "get" : {
+        "responses" : {
+          "default" : {
+            "description" : "Default response for GET /products"
+          }
+        },
+        "x-amazon-apigateway-integration" : {
+          "payloadFormatVersion" : "2.0",
+          "type" : "aws_proxy",
+          "httpMethod" : "POST",
+          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:485160961034:function:ProductService-dev-getProductList/invocations",
+          "connectionType" : "INTERNET",
+          "timeoutInMillis" : 30000
+        }
+      }
+    }
+  },
+  "x-amazon-apigateway-importexport-version" : "1.0"
+}
