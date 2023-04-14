@@ -1,0 +1,57 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: ProductService
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+# you can overwrite defaults here
+  stage: dev
+  region: us-east-1
+
+
+# you can add packaging information here
+package:
+  individually: true
+  patterns:
+    - '!**/*'
+
+functions:
+  getProductList:
+    package:
+      include:
+        - dist/getProductList.js
+        - dist/package.json
+    handler: dist/getProductList.getProductList
+    events:
+      - httpApi:
+          path: /products
+          method: get
+          cors: true
+
+  getProductById:
+    package:
+      include:
+        - dist/getProductById.js
+        - dist/package.json
+    handler: dist/getProductById.getProductById
+    events:
+      - httpApi:
+          path: /product/{id}
+          method: get
+          cors: true
+
