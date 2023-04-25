@@ -3,12 +3,6 @@
     "build": "npm run -w ProductService build",
     "deployProductService": "npm run -w ProductService deploy"
   },
-  "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.306.0",
-    "@aws-sdk/util-dynamodb": "^3.306.0",
-    "dotenv": "^16.0.3",
-    "uuid": "^9.0.0"
-  },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.114",
     "@types/jest": "^29.5.0",
@@ -21,6 +15,7 @@
     "typescript": "^5.0.3"
   },
   "workspaces": [
-    "ProductService"
+    "ProductService",
+    "ImportService"
   ]
 }

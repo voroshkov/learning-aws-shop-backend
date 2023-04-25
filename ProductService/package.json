@@ -5,5 +5,11 @@
     "build:deploy": "npm run build && npm run deploy",
     "test": "jest --verbose"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.306.0",
+    "@aws-sdk/util-dynamodb": "^3.306.0",
+    "dotenv": "^16.0.3",
+    "uuid": "^9.0.0"
+  }
 }
