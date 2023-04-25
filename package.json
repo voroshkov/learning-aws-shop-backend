@@ -1,13 +1,19 @@
 {
   "scripts": {
     "build": "npm run -w ProductService build",
-    "deployProductService": "npm run -w ProductService deploy",
-    "api_docs": "aws apigateway get-export --parameters extensions='apigateway' --rest-api-id 7u8vlssv4d --stage-name dev --export-type swagger latestswagger2.json"
+    "deployProductService": "npm run -w ProductService deploy"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.306.0",
+    "@aws-sdk/util-dynamodb": "^3.306.0",
+    "dotenv": "^16.0.3",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.114",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
+    "@types/uuid": "^9.0.1",
     "esbuild": "0.17.15",
     "jest": "^29.5.0",
     "prettier": "^2.8.7",

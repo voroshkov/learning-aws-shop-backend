@@ -1,16 +1,3 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: ProductService
 
 frameworkVersion: '3'
@@ -18,13 +5,41 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs18.x
-
-# you can overwrite defaults here
   stage: dev
   region: us-east-1
 
+  httpApi:
+    cors: true
 
-# you can add packaging information here
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:us-east-1:485160961034:table/Products"
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:us-east-1:485160961034:table/Stocks"
+
+  environment:
+    DYNDB_PRODUCTS_TABLE_NAME: "Products"
+    DYNDB_STOCKS_TABLE_NAME: "Stocks"
+
+#plugins:
+#  - serverless-functions-base-path
+#custom:
+#  functionsBasePath: dist
+
 package:
   individually: true
   patterns:
@@ -34,14 +49,14 @@ functions:
   getProductList:
     package:
       include:
-        - dist/getProductList.js
-        - dist/package.json
+       - dist/getProductList.js
+       - dist/package.json
     handler: dist/getProductList.getProductList
     events:
       - httpApi:
           path: /products
           method: get
-          cors: true
+
 
   getProductById:
     package:
@@ -53,5 +68,16 @@ functions:
       - httpApi:
           path: /product/{id}
           method: get
-          cors: true
+
+
+  createProduct:
+    package:
+      include:
+        - dist/createProduct.js
+        - dist/package.json
+    handler: dist/createProduct.createProduct
+    events:
+      - httpApi:
+          path: /products
+          method: post
 
