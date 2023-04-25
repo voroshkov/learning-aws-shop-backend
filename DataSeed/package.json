@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "add": "node addData.js"
+  },
+  "type": "module"
+}

@@ -4,18 +4,33 @@ import esbuild from 'esbuild';
 
 const outDir = `dist`;
 
+import pkg from '../package.json' assert { type: 'json' };
+
 // cleanup dist folder
 fs.rmSync(outDir, { recursive: true, force: true });
 
+const external = [
+  ...Object.keys(pkg.dependencies || {}).filter((key) =>
+    key.startsWith('@aws-sdk')
+  ),
+];
+
+console.log(`Won't bundle modules:`, external);
+
 // build with esbuild
 await esbuild.build({
-  entryPoints: ['src/getProductById.ts', 'src/getProductList.ts'],
+  entryPoints: [
+    'src/getProductById.ts',
+    'src/getProductList.ts',
+    'src/createProduct.ts',
+  ],
   bundle: true,
   outdir: outDir,
   platform: 'node',
   format: 'esm',
   target: 'esnext',
+  external,
 });
 
-// copy package.json to dist folder to enable ESModules in AWS Lambdas
+// copy package.json to dist folder to enable ESModules in AWS Lambdas and provide dependencies
 fs.cpSync('deployArtifacts/package.json', `${outDir}/package.json`);
