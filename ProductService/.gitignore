@@ -1,3 +1,5 @@
 # package directories
+.env
 .serverless
+.idea
 dist

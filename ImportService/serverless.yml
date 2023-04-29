@@ -11,16 +11,24 @@ provider:
     - Effect: Allow
       Action: "s3:*"
       Resource: arn:aws:s3:::${self:custom.s3BucketName}/*
+    - Effect: Allow
+      Action: "sqs:*"
+      Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${self:custom.sqsQueueName}
+
+
+
 
   environment:
     REGION: ${self:provider.region}
     BUCKET_NAME: ${self:custom.s3BucketName}
     UPLOAD_PATH: ${self:custom.uploadPath}
+    SQS_QUEUE_NAME: ${self:custom.sqsQueueName}
 
 
 custom:
   s3BucketName: "avshoplearntask-uploadbucket"
   uploadPath: "uploaded"
+  sqsQueueName: "catalogItemsQueue"
 
 package:
   individually: true

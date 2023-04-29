@@ -23,6 +23,7 @@ await esbuild.build({
     'src/getProductById.ts',
     'src/getProductList.ts',
     'src/createProduct.ts',
+    'src/catalogBatchProcess.ts',
   ],
   bundle: true,
   outdir: outDir,
@@ -30,6 +31,12 @@ await esbuild.build({
   format: 'esm',
   target: 'esnext',
   external,
+  banner: {
+    js: `
+        import { createRequire as topLevelCreateRequire } from 'module';
+        const require = topLevelCreateRequire(import.meta.url);
+        `,
+  },
 });
 
 // copy package.json to dist folder to enable ESModules in AWS Lambdas and provide dependencies

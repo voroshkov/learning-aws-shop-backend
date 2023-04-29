@@ -1,3 +1,5 @@
+useDotenv: true
+
 service: ProductService
 
 frameworkVersion: '3'
@@ -30,15 +32,27 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:us-east-1:485160961034:table/Stocks"
+    - Effect: Allow
+      Action: sns:*
+      Resource:
+        Ref: SNSTopic
 
   environment:
+    REGION: ${self:provider.region}
     DYNDB_PRODUCTS_TABLE_NAME: "Products"
     DYNDB_STOCKS_TABLE_NAME: "Stocks"
+    SQS_ARN:
+      Fn::GetAtt:
+        - CatalogItemsQueue
+        - Arn
+    SNS_ARN:
+      Ref: SNSTopic
 
 #plugins:
 #  - serverless-functions-base-path
-#custom:
-#  functionsBasePath: dist
+
+custom:
+  snsName: "createProductTopic"
 
 package:
   individually: true
@@ -80,4 +94,50 @@ functions:
       - httpApi:
           path: /products
           method: post
+
+  catalogBatchProcess:
+    package:
+      include:
+        - dist/catalogBatchProcess.js
+        - dist/package.json
+    handler: dist/catalogBatchProcess.catalogBatchProcess
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt:
+              - CatalogItemsQueue
+              - Arn
+
+resources:
+  Resources:
+    CatalogItemsQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "catalogItemsQueue"
+
+    SNSTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        TopicName: ${self:custom.snsName}
+
+    SNSTopicSubscription1:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: ${env:WORK_EMAIL}
+        Protocol: email
+        FilterPolicy:
+          ProductPrice: [{"numeric": ["<=", 15]}]
+        TopicArn:
+          Ref: SNSTopic
+
+    SNSTopicSubscription2:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: ${env:PERSONAL_EMAIL}
+        Protocol: email
+        FilterPolicy:
+          ProductPrice: [{"numeric": [">", 15]}]
+        TopicArn:
+          Ref: SNSTopic
 
