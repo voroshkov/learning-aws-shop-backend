@@ -1,13 +1,18 @@
 import { APIGatewayEvent, Context } from 'aws-lambda';
 import { getProductById } from '../getProductById.ts';
-import { products } from '../data/products.ts';
 
 const context = {} as Context;
 const callback = () => {};
 
 describe('getProductById', () => {
   test('should return product by id', async () => {
-    const product = products[0];
+    const product = {
+      description: 'AV Short Product Description1',
+      id: '7567ec4b-b10c-48c5-9345-fc73c48a80aa',
+      price: 24,
+      title: 'AV Product A',
+      count: 2,
+    };
     const event: APIGatewayEvent = {
       pathParameters: { id: product.id },
     } as unknown as APIGatewayEvent;
