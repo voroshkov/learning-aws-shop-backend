@@ -15,20 +15,53 @@ jest.mock('@aws-sdk/client-sns', () => {
   };
 });
 
-const makeEvent = (product: ProductUserInput): SQSEvent => ({
-  Records: [
-    {
-      body: JSON.stringify(product),
-    } as unknown as SQSRecord,
-  ],
+const makeEvent = (products: ProductUserInput[]): SQSEvent => ({
+  Records: products.map(
+    (product) =>
+      ({
+        body: JSON.stringify(product),
+      } as unknown as SQSRecord)
+  ),
 });
 
-const product: ProductUserInput = {
-  count: 1,
-  description: 'dsc',
-  price: 15,
-  title: 'title',
+const makeEventWithMessageIds = (
+  products: ProductUserInput[],
+  messageIds: string[]
+): SQSEvent => {
+  if (products.length !== messageIds.length) {
+    throw new Error('messageIds length must be equal to products length');
+  }
+  const records = products.map(
+    (product, index) =>
+      ({
+        body: JSON.stringify(product),
+        messageId: messageIds[index],
+      } as unknown as SQSRecord)
+  );
+  return { Records: records };
 };
+
+const product1: ProductUserInput = {
+  count: 1,
+  description: 'dsc1',
+  price: 15,
+  title: 'title1',
+};
+
+const product2: ProductUserInput = {
+  count: 2,
+  description: 'dsc2',
+  price: 25,
+  title: 'title2',
+};
+
+const product3: ProductUserInput = {
+  count: 3,
+  description: 'dsc3',
+  price: 35,
+  title: 'title3',
+};
+
 describe('catalogBatchProcess lambda', () => {
   const snsSendMock = jest.fn();
   const snsClientObjectMock = { send: snsSendMock };
@@ -43,8 +76,6 @@ describe('catalogBatchProcess lambda', () => {
       SNS_ARN: 'testSnsArn',
     });
 
-    console.log('SNS_ARN in beforeeach', process.env.SNS_ARN);
-
     snsClientMock = jest
       .spyOn(snsClient, 'SNSClient')
       .mockImplementation(
@@ -53,7 +84,12 @@ describe('catalogBatchProcess lambda', () => {
 
     addProductToDbMock = jest
       .spyOn(utils, 'addProductToDb')
-      .mockResolvedValue({ ...product, id: 'testID' });
+      .mockImplementation((_, __, product: ProductUserInput) =>
+        Promise.resolve({
+          ...product,
+          id: 'testID',
+        })
+      );
   });
 
   afterEach(() => {
@@ -65,9 +101,7 @@ describe('catalogBatchProcess lambda', () => {
   });
 
   test('should invoke addProductToDb and send SNS message with inserted product', async () => {
-    console.log('SNS_ARN in test', process.env.SNS_ARN);
-
-    const event = makeEvent(product);
+    const event = makeEvent([product1]);
 
     const result = await catalogBatchProcess(event, {} as Context, jest.fn());
 
@@ -84,9 +118,9 @@ describe('catalogBatchProcess lambda', () => {
         "testStocksTable",
         {
           "count": 1,
-          "description": "dsc",
+          "description": "dsc1",
           "price": 15,
-          "title": "title",
+          "title": "title1",
         },
       ]
     `);
@@ -94,7 +128,7 @@ describe('catalogBatchProcess lambda', () => {
     expect(snsSendMock).toHaveBeenCalledTimes(1);
     expect(snsSendMock.mock.calls[0][0].input).toMatchInlineSnapshot(`
       {
-        "Message": "[{"count":1,"description":"dsc","price":15,"title":"title","id":"testID"}]",
+        "Message": "{"count":1,"description":"dsc1","price":15,"title":"title1"}",
         "MessageAttributes": {
           "ProductPrice": {
             "DataType": "Number",
@@ -103,6 +137,107 @@ describe('catalogBatchProcess lambda', () => {
         },
         "Subject": "Product Creation",
         "TopicArn": "testSnsArn",
+      }
+    `);
+  });
+
+  test('should invoke addProductToDb and send SNS message N times corresponding to products count', async () => {
+    const event = makeEvent([product1, product2]);
+
+    const result = await catalogBatchProcess(event, {} as Context, jest.fn());
+
+    expect(snsClientMock).toHaveBeenCalledTimes(1);
+    expect(snsClientMock.mock.calls[0][0]).toMatchInlineSnapshot(`
+      {
+        "region": "testRegion",
+      }
+    `);
+    expect(addProductToDbMock).toHaveBeenCalledTimes(2);
+    expect(addProductToDbMock.mock.calls[0]).toMatchInlineSnapshot(`
+      [
+        "testProductsTable",
+        "testStocksTable",
+        {
+          "count": 1,
+          "description": "dsc1",
+          "price": 15,
+          "title": "title1",
+        },
+      ]
+    `);
+    expect(addProductToDbMock.mock.calls[1]).toMatchInlineSnapshot(`
+      [
+        "testProductsTable",
+        "testStocksTable",
+        {
+          "count": 2,
+          "description": "dsc2",
+          "price": 25,
+          "title": "title2",
+        },
+      ]
+    `);
+
+    expect(snsSendMock).toHaveBeenCalledTimes(2);
+    expect(snsSendMock.mock.calls[0][0].input).toMatchInlineSnapshot(`
+      {
+        "Message": "{"count":1,"description":"dsc1","price":15,"title":"title1"}",
+        "MessageAttributes": {
+          "ProductPrice": {
+            "DataType": "Number",
+            "StringValue": "15",
+          },
+        },
+        "Subject": "Product Creation",
+        "TopicArn": "testSnsArn",
+      }
+    `);
+    expect(snsSendMock.mock.calls[1][0].input).toMatchInlineSnapshot(`
+      {
+        "Message": "{"count":2,"description":"dsc2","price":25,"title":"title2"}",
+        "MessageAttributes": {
+          "ProductPrice": {
+            "DataType": "Number",
+            "StringValue": "25",
+          },
+        },
+        "Subject": "Product Creation",
+        "TopicArn": "testSnsArn",
+      }
+    `);
+  });
+
+  test('should report ids of not inserted messages on failure', async () => {
+    addProductToDbMock = jest
+      .spyOn(utils, 'addProductToDb')
+      .mockImplementationOnce((_, __, product: ProductUserInput) =>
+        Promise.reject()
+      )
+      .mockImplementationOnce((_, __, product: ProductUserInput) =>
+        Promise.reject()
+      )
+      .mockImplementationOnce((_, __, product: ProductUserInput) =>
+        Promise.resolve({
+          ...product,
+          id: 'testID',
+        })
+      );
+
+    const event = makeEventWithMessageIds(
+      [product1, product2, product3],
+      ['111', '222', '333']
+    );
+    const result = await catalogBatchProcess(event, {} as Context, jest.fn());
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "batchItemFailures": [
+          {
+            "itemIdentifier": "111",
+          },
+          {
+            "itemIdentifier": "222",
+          },
+        ],
       }
     `);
   });
