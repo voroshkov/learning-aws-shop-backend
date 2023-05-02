@@ -34,6 +34,7 @@ describe('ImportProductsFile lambda', () => {
       REGION: 'testRegion',
       BUCKET_NAME: 'testBucket',
       UPLOAD_PATH: 'testUploadPath',
+      SQS_QUEUE_NAME: 'testQueueName',
     });
 
     s3ClientMock = jest

@@ -4,7 +4,7 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 
 import type { Product } from './types.ts';
 import { isProduct } from './types.ts';
-import { makeResponse } from './utils.js';
+import { makeResponse } from './utils.ts';
 
 const DYNDB_PRODUCTS_TABLE_NAME = process.env.DYNDB_PRODUCTS_TABLE_NAME;
 const DYNDB_STOCKS_TABLE_NAME = process.env.DYNDB_STOCKS_TABLE_NAME;

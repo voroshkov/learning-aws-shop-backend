@@ -5,12 +5,25 @@ import {
   GetObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import {
+  SQSClient,
+  GetQueueUrlCommand,
+  SendMessageCommand,
+} from '@aws-sdk/client-sqs';
 import csvParser from 'csv-parser';
 import type { Readable } from 'stream';
 
 const REGION = process.env.REGION ?? '';
 const BUCKET_NAME = process.env.BUCKET_NAME ?? '';
 const UPLOAD_PATH = process.env.UPLOAD_PATH ?? '';
+const SQS_QUEUE_NAME = process.env.SQS_QUEUE_NAME ?? '';
+
+const getSQSQueueUrl = async (sqsClient: SQSClient) => {
+  const params = { QueueName: SQS_QUEUE_NAME };
+  const { QueueUrl } = await sqsClient.send(new GetQueueUrlCommand(params));
+  if (!QueueUrl) throw new Error('Could not retrieve SQS Queue URL');
+  return QueueUrl;
+};
 
 const readFile = async (key: string): Promise<Readable> => {
   const client = new S3Client({ region: REGION });
@@ -45,18 +58,25 @@ const deleteFile = async (key: string): Promise<void> => {
   console.log('deleteResult', JSON.stringify(deleteResult, null, 2), '\n\n');
 };
 
-const parseCsvStream = (
+const parseCsvStream = async (
   stream: Readable
 ): Promise<Record<string, string>[]> => {
   console.log('Reading CSV file...');
 
+  const sqsClient = new SQSClient({ region: REGION });
+  const sqsQueueUrl = await getSQSQueueUrl(sqsClient);
   const results: Record<string, string>[] = [];
   return new Promise((resolve) => {
     stream
       .pipe(csvParser())
-      .on('data', (data) => {
+      .on('data', async (data) => {
         results.push(data);
-        console.log('parsed record:', data);
+        const sendMessageCommand = new SendMessageCommand({
+          QueueUrl: sqsQueueUrl,
+          MessageBody: JSON.stringify(data),
+        });
+        const res = await sqsClient.send(sendMessageCommand);
+        console.log('SQS Response:', res);
       })
       .on('end', () => {
         console.log(results);
