@@ -29,6 +29,7 @@ custom:
   s3BucketName: "avshoplearntask-uploadbucket"
   uploadPath: "uploaded"
   sqsQueueName: "catalogItemsQueue"
+  authorizerFunctionName: "AuthorizationService-dev-basicAuthorizer"
 
 package:
   individually: true
@@ -41,6 +42,7 @@ functions:
       include:
        - dist/ImportProductsFile/*
     handler: dist/ImportProductsFile/index.handler
+
     events:
       - http:
           path: /import
@@ -50,7 +52,11 @@ functions:
             parameters:
               querystrings:
                 name: true
-
+          authorizer:
+            name: basicTokenAuthorizer
+            type: token
+            arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:custom.authorizerFunctionName}
+            resultTtlInSeconds: 0 # cache time
 
   importFileParser:
     package:
@@ -64,4 +70,16 @@ functions:
           rules:
             - prefix: ${self:custom.uploadPath}
           existing: true
+
+resources:
+  Resources:
+    GatewayResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: "DEFAULT_4XX"
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
 
